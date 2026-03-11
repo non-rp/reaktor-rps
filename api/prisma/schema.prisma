@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Player {
+
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+
+  matchesA Match[] @relation("PlayerA")
+  matchesB Match[] @relation("PlayerB")
+}
+
+model Match {
+
+  id      Int @id @default(autoincrement())
+
+  gameId  String @unique
+  time    BigInt
+
+  playerAId Int
+  playerBId Int
+
+  playerAMove String
+  playerBMove String
+  playerAMoveValid Boolean @default(true)
+  playerBMoveValid Boolean @default(true)
+  isValid Boolean @default(true)
+  invalidReason String?
+
+  result   String
+  winnerId Int?
+
+  playerA Player @relation("PlayerA", fields: [playerAId], references: [id])
+  playerB Player @relation("PlayerB", fields: [playerBId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([time])
+  @@index([playerAId])
+  @@index([playerBId])
+  @@index([winnerId])
+}
