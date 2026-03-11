@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet"; // security middleware(setting HTTP headers)
 import morgan from "morgan"; // loging middleware
 import dotenv from "dotenv";
+import historyRouter from "./routes/history";
 
 dotenv.config();
 
@@ -15,9 +16,10 @@ app.use(morgan(format));
 app.use(express.json());
 
 app.get("/api/health", (req, res) => {
-  console.log(process.env.PORT, process.env.RPS_BASE_URL, process.env.RPS_API_KEY);
   res.status(200).json({ status: "ok" });
 });
+
+app.use("/api/history", historyRouter);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
