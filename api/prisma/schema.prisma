@@ -45,3 +45,33 @@ model Match {
   @@index([playerBId])
   @@index([winnerId])
 }
+
+model SyncState {
+
+  id String @id
+
+  nextCursor String?
+  isRunning Boolean @default(false)
+  triggerSource String?
+
+  pagesProcessed Int @default(0)
+  matchesFetched Int @default(0)
+  matchesCreated Int @default(0)
+  matchesUpdated Int @default(0)
+  invalidMatches Int @default(0)
+
+  lastError String?
+  lastStartedAt DateTime?
+  lastCompletedAt DateTime?
+  lastHeartbeatAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SyncedHistoryCursor {
+
+  cursor String @id
+
+  createdAt DateTime @default(now())
+}
