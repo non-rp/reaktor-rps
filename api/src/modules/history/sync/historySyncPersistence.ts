@@ -3,6 +3,7 @@ import { getWinner, validateMove } from "../../../utils/winner"
 import type { ValidMove } from "../../../types/match"
 import type { RawGameResult } from "../../../types/raw"
 import type { PreparedMatch } from "./historySyncTypes"
+import { Prisma } from "@prisma/client"
 
 export async function upsertHistoryMatches(
 	matches: RawGameResult[],
@@ -14,40 +15,58 @@ export async function upsertHistoryMatches(
 }> {
 	const playerIds = await ensurePlayers(matches, playerIdCache)
 	const preparedMatches = prepareMatches(matches, playerIds)
-	const existingGameIds = await loadExistingGameIds(preparedMatches.map((match) => match.gameId))
+	const existingMatches = await loadExistingMatches(preparedMatches.map((match) => match.gameId))
 
-	const matchesToCreate = preparedMatches.filter((match) => !existingGameIds.has(match.gameId))
-	const matchesToUpdate = preparedMatches.filter((match) => existingGameIds.has(match.gameId))
+	const matchesToCreate = preparedMatches.filter((match) => !existingMatches.has(match.gameId))
+	const matchesToUpdate = preparedMatches.filter((match) => existingMatches.has(match.gameId))
 
-	if (matchesToCreate.length > 0) {
-		await prisma.match.createMany({
-			data: matchesToCreate,
-			skipDuplicates: true
-		})
+	const affectedDays = new Set<string>()
+
+	for (const match of matchesToCreate) {
+		affectedDays.add(getMatchDay(match.time))
 	}
 
-	if (matchesToUpdate.length > 0) {
-		await prisma.$transaction(
-			matchesToUpdate.map((match) =>
-				prisma.match.update({
-					where: { gameId: match.gameId },
-					data: {
-						time: match.time,
-						playerAId: match.playerAId,
-						playerBId: match.playerBId,
-						playerAMove: match.playerAMove,
-						playerBMove: match.playerBMove,
-						playerAMoveValid: match.playerAMoveValid,
-						playerBMoveValid: match.playerBMoveValid,
-						isValid: match.isValid,
-						invalidReason: match.invalidReason,
-						result: match.result,
-						winnerId: match.winnerId
-					}
-				})
-			)
-		)
+	for (const match of matchesToUpdate) {
+		affectedDays.add(getMatchDay(match.time))
+
+		const existingMatch = existingMatches.get(match.gameId)
+
+		if (existingMatch) {
+			affectedDays.add(getMatchDay(existingMatch.time))
+		}
 	}
+
+	await prisma.$transaction(async (tx) => {
+		if (matchesToCreate.length > 0) {
+			await tx.match.createMany({
+				data: matchesToCreate,
+				skipDuplicates: true
+			})
+		}
+
+		for (const match of matchesToUpdate) {
+			await tx.match.update({
+				where: { gameId: match.gameId },
+				data: {
+					time: match.time,
+					playerAId: match.playerAId,
+					playerBId: match.playerBId,
+					playerAMove: match.playerAMove,
+					playerBMove: match.playerBMove,
+					playerAMoveValid: match.playerAMoveValid,
+					playerBMoveValid: match.playerBMoveValid,
+					isValid: match.isValid,
+					invalidReason: match.invalidReason,
+					result: match.result,
+					winnerId: match.winnerId
+				}
+			})
+		}
+
+		if (affectedDays.size > 0) {
+			await refreshPlayerDayStats(tx, [...affectedDays])
+		}
+	})
 
 	return {
 		matchesCreated: matchesToCreate.length,
@@ -159,9 +178,12 @@ function prepareMatches(
 	})
 }
 
-async function loadExistingGameIds(gameIds: string[]): Promise<Set<string>> {
+async function loadExistingMatches(gameIds: string[]): Promise<Map<string, {
+	gameId: string
+	time: bigint
+}>> {
 	if (gameIds.length === 0) {
-		return new Set<string>()
+		return new Map()
 	}
 
 	const existingMatches = await prisma.match.findMany({
@@ -171,11 +193,86 @@ async function loadExistingGameIds(gameIds: string[]): Promise<Set<string>> {
 			}
 		},
 		select: {
-			gameId: true
+			gameId: true,
+			time: true
 		}
 	})
 
-	return new Set(existingMatches.map((match) => match.gameId))
+	return new Map(existingMatches.map((match) => [match.gameId, match]))
+}
+
+async function refreshPlayerDayStats(
+	tx: Prisma.TransactionClient,
+	days: string[]
+): Promise<void> {
+	const uniqueDays = [...new Set(days)]
+
+	for (const day of uniqueDays) {
+		const dayDate = new Date(`${day}T00:00:00.000Z`)
+
+		await tx.playerDayStat.deleteMany({
+			where: {
+				day: dayDate
+			}
+		})
+
+		const stats = await tx.$queryRaw<Array<{
+			playerId: number
+			day: Date
+			matches: number
+			wins: number
+			losses: number
+			draws: number
+			invalidMatches: number
+		}>>(Prisma.sql`
+			SELECT
+				stats."playerId",
+				stats."day",
+				COUNT(*)::INTEGER AS "matches",
+				COALESCE(SUM(CASE WHEN stats."outcome" = 'WIN' THEN 1 ELSE 0 END), 0)::INTEGER AS "wins",
+				COALESCE(SUM(CASE WHEN stats."outcome" = 'LOSS' THEN 1 ELSE 0 END), 0)::INTEGER AS "losses",
+				COALESCE(SUM(CASE WHEN stats."outcome" = 'DRAW' THEN 1 ELSE 0 END), 0)::INTEGER AS "draws",
+				COALESCE(SUM(CASE WHEN stats."outcome" = 'INVALID' THEN 1 ELSE 0 END), 0)::INTEGER AS "invalidMatches"
+			FROM (
+				SELECT
+					"playerAId" AS "playerId",
+					to_timestamp("time" / 1000.0)::date AS "day",
+					CASE
+						WHEN NOT "isValid" THEN 'INVALID'
+						WHEN "result" = 'DRAW' THEN 'DRAW'
+						WHEN "result" = 'A' THEN 'WIN'
+						WHEN "result" = 'B' THEN 'LOSS'
+						ELSE 'INVALID'
+					END AS "outcome"
+				FROM "Match"
+				WHERE to_timestamp("time" / 1000.0)::date = ${dayDate}::date
+				UNION ALL
+				SELECT
+					"playerBId" AS "playerId",
+					to_timestamp("time" / 1000.0)::date AS "day",
+					CASE
+						WHEN NOT "isValid" THEN 'INVALID'
+						WHEN "result" = 'DRAW' THEN 'DRAW'
+						WHEN "result" = 'B' THEN 'WIN'
+						WHEN "result" = 'A' THEN 'LOSS'
+						ELSE 'INVALID'
+					END AS "outcome"
+				FROM "Match"
+				WHERE to_timestamp("time" / 1000.0)::date = ${dayDate}::date
+			) AS stats
+			GROUP BY stats."playerId", stats."day"
+		`)
+
+		if (stats.length > 0) {
+			await tx.playerDayStat.createMany({
+				data: stats
+			})
+		}
+	}
+}
+
+function getMatchDay(time: bigint): string {
+	return new Date(Number(time)).toISOString().slice(0, 10)
 }
 
 function buildInvalidReason(

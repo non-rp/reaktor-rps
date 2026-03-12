@@ -9,10 +9,17 @@ export async function listHistory(req: Request, res: Response, next: NextFunctio
 	try {
 		const limit = parsePositiveInt(req.query.limit, DEFAULT_LIMIT, MAX_LIMIT)
 		const offset = parsePositiveInt(req.query.offset, 0)
+		const playerId = parseOptionalPositiveInt(req.query.playerId)
+		const playerName = parseOptionalString(req.query.playerName)
+		const { from, to } = parseHistoryDateFilters(req.query.date, req.query.from, req.query.to)
 
 		const matches = await getMatches({
 			limit,
-			offset
+			offset,
+			from,
+			to,
+			playerId,
+			playerName
 		})
 
 		res.json(matches)
@@ -75,4 +82,68 @@ function parsePositiveInt(
 	}
 
 	return parsed
+}
+
+function parseOptionalPositiveInt(value: unknown): number | undefined {
+	if (typeof value !== "string" || value.trim() === "") {
+		return undefined
+	}
+
+	const parsed = Number.parseInt(value, 10)
+
+	if (!Number.isFinite(parsed) || parsed < 0) {
+		return undefined
+	}
+
+	return parsed
+}
+
+function parseOptionalString(value: unknown): string | undefined {
+	if (typeof value !== "string") {
+		return undefined
+	}
+
+	const normalized = value.trim()
+
+	return normalized === "" ? undefined : normalized
+}
+
+function parseHistoryDateFilters(
+	dateValue: unknown,
+	fromValue: unknown,
+	toValue: unknown
+): {
+	from?: Date
+	to?: Date
+} {
+	const date = parseDateOnly(dateValue)
+
+	if (date) {
+		return {
+			from: date,
+			to: new Date(date.getTime() + 24 * 60 * 60 * 1000)
+		}
+	}
+
+	const from = parseDateOnly(fromValue)
+	const inclusiveTo = parseDateOnly(toValue)
+
+	return {
+		from: from ?? undefined,
+		to: inclusiveTo ? new Date(inclusiveTo.getTime() + 24 * 60 * 60 * 1000) : undefined
+	}
+}
+
+function parseDateOnly(value: unknown): Date | undefined {
+	if (typeof value !== "string" || value.trim() === "") {
+		return undefined
+	}
+
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return undefined
+	}
+
+	const parsed = new Date(`${value}T00:00:00.000Z`)
+
+	return Number.isNaN(parsed.getTime()) ? undefined : parsed
 }
