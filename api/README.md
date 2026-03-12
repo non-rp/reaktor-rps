@@ -17,6 +17,13 @@ npx prisma generate
 npm run dev
 ```
 
+Swagger/OpenAPI is available after startup at:
+
+```bash
+http://localhost:3000/api/docs
+http://localhost:3000/api/docs.json
+```
+
 The local `.env` uses `localhost` in `DATABASE_URL` so Node/Express can connect to the database from your machine.
 The dev compose file publishes Postgres on `localhost:5433` to avoid conflicts with any native Postgres already running on your machine.
 
@@ -42,3 +49,5 @@ location /api/ {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
+
+With that routing, the documentation UI is available at `/api/docs`, and the raw OpenAPI JSON at `/api/docs.json`.
