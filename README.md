@@ -1,4 +1,4 @@
-# Rock-Paper-Scissors (RPS) Statistic Project 
+# Rock-Paper-Scissors (RPS) Statistics Project
 
 ## Requested Features 
 
@@ -12,82 +12,94 @@
 
 - Historical leaderboard based on number of wins, which shows the results for a specific date range
 
-## Initial information 
+## Context
 
-- protected External API - https://assignments.reaktor.com/
+- Protected external API: `https://assignments.reaktor.com/`.
+- API routes:
+  - `/history`: paginated historical data with a pointer to the next page.
+  - `/live`: live match events delivered via Server-Sent Events (SSE).
+- Delivery window: `2026-03-09 09:00` to `2026-03-15 23:59`.
+- Preferred implementation stack: TypeScript, React, Node.js (learning-focused project).
 
-- ExtAPI has /history and /live routes
+## Objectives & Success Criteria
 
-- /history - Returns a page of game data and a path to the next page of data.
+### Delivery Objectives
 
-- /live    – Streams live game results as Server-Sent Events (SSE).
+1. Implement all required features.
+   - Success criterion: each requested feature is available in the UI and backed by API endpoints.
+2. Deliver production-ready MVP quality within the time limit.
+   - Success criterion: stable data sync, predictable API behavior, and documented interfaces.
+3. Deploy a publicly accessible application.
+   - Success criterion: live environment is reachable and serves both app and API.
 
-- prefered teck stack: modern web technologies (e.g. Typescript, React, Node) (not my main stack)
+### Learning Objectives
 
-- duration from 09.03.26 9:00 to 15.03.26 23:59
+1. Deepen practical proficiency in the JavaScript/TypeScript stack.
+   - Success criterion: key implementation decisions are understood and reproducible without copy-paste.
+2. Identify weak areas and convert them into a follow-up practice plan.
+   - Success criterion: concrete backlog of topics and exercises created after delivery.
 
-## Goals
+## Architecture Decisions
 
-1. Implement all required features
-2. Try to build as quality as I can 
-3. Deploy result to server
-4. Deeply learn JS based techstack, find my weaks,add to list for next practice 
+- Node.js + Express for back-end services: sufficient complexity/performance tradeoff for MVP scope.
+- React for front-end UI: appropriate for client-rendered application without SEO/SSR requirements.
+- TypeScript across layers: enforces type safety and reduces integration errors.
+- PostgreSQL as primary data store: relational model matches leaderboard and historical query needs.
+- OpenAPI/Swagger documentation: enables deterministic FE-BE integration and faster debugging.
+- Optional (non-blocking) enhancement: Redis caching for hot leaderboard queries if time permits.
 
-## Technologies 
+## Delivery Plan
 
- - according to recomendation + learning process the main stack for this project will be Node.js, Express, React, TTypescript, PostgresSQL
+### Phase 1: Discovery
 
- - Back-end: Node.js, Express - the project is not so big and complecated, + we are not going to expand it so for MVP stage it's enough
- 
- - Front-end: React - i would prefer to split fe and be, in case we are not going to use nothing complex as SSR, ISR and we don't need SEO or robots indexing for this aplication React is more than enough. + I have experience with it more so it's okay solution here 
+- Validate `/history` payload shape, pagination, and cursor behavior.
+- Validate `/live` event schema and ingestion expectations.
+- Outcome: integration contract and normalized internal data model.
 
- - Typescript: it's already a standart for development, types is mast have
+### Phase 2: Backend
 
- - Postgres: I didn't find any points to use no relative main db here as Mongo, we have clear models structure with a few columns whome will be filled fully with data from api. Relative db is easyly to understand and support. Postgress as a standart, so just use it.
+- Implement full historical backfill and incremental sync strategy.
+- Schedule hourly `/history` synchronization with retry policy.
+- Persist sync state (cursor/checkpoint) in database for crash-safe recovery.
+- Design schema and indexes for date, player, and leaderboard queries.
+- Publish OpenAPI docs for all consumer-facing endpoints.
+- Outcome: production-ready MVP API with reliable synchronization and recoverability.
 
- - We have a huge amount of data, so we can add caching here and use Redis for faster responces. This can be implemented after in case I'll have time
+### Phase 3: Frontend
 
- ## Plan 
+- Implement responsive UI for latest results, date filter, player filter, and leaderboards.
+- Use a component library to accelerate delivery while keeping UX consistent.
+- Outcome: complete feature coverage with clear, usable presentation.
 
-1. External API investigation (Postman)
+### Phase 4: Quality
 
- - Data structure 
- - Filtering and pagination functionality
- - Decide the next steps how to work with it
- - Do we need to pull data to our db or work directly with ExtAPI? - yes we need to have data in normalized type so we need to implement puling(sync) functionality
+- Add unit tests for core business logic and integration tests for critical API flows.
+- Validate edge cases around pagination, empty states, and date-range queries.
+- Outcome: regression protection for core requirements.
 
-2. Back-end
+### Phase 5: Release
 
- - implementation extAPI data sync to our db(all previous data), extAPI doesn't have rate limiting so we can pull data hard, but retrys should be added anyway.
- - implement cron job, extAPI /history page updates hourly with mathes of previous hour and cursor on prev hour page data
- - save populated pages cursor to our db, so we can control all data is available and sync, if our service down for a some time after start it should check if there is new data and pull it all
- - create a proper db structure with indexes, avoid n+1 problem in future requests
- - Swagger documentation as part for next FE implementation, actually I don't need it, but let's think this project will be supported and extended after with a team.
+- Prepare containerized deployment artifacts and runtime configuration.
+- Execute release checklist and verify health in live environment.
+- Outcome: reproducible deployment process and verified production baseline.
 
-3. Front-end
+## Release Strategy
 
- - design: I don't have time to design project in Figma(actually I am not designer so it can take a lots time) I can use free ready-made solutions as Material UI to speed up FE build
- - so the solution here is to build responsive layout with UI lib
- - Components: Header, Footer, Buttons, Select, Table(with paging)
+### Must Have
 
- 4. Testing implementation
+- VPS deployment with Dockerized services.
+- Nginx reverse proxy in front of the API/application.
+- HTTPS enabled via SSL certificate.
+- Public subdomain routing to the deployed environment.
 
- - let's try to implement some integration and unit testing only after main features finished
+### If Time Allows
 
- ## Deployment 
+- CI/CD pipeline for automated build, test, and deployment.
+- Additional operational hardening and observability improvements.
 
- - Homework Submission form has "Live Application URL (Optional)" so would be greate to deploy app to server. 
- - I have a VPS so spent some time to set up sub-domain, SSL, docker and nginx for next deploy.
- - If I have time CI/CD piplines makes sence for deployment  but for showcasing I can deploy it manually
+## AI Assistance Policy
 
- ## AI usage
-
- I use AI every day as my third hand, some time ago I did tha same with Google search and stackoverflow. 
-
- According to time limits and plans I don't have enough time to write everithing on my own so partly I will delegate code writing to AI.
-
- In case techstack the project use is not my main but I am in progress of learning all code written by AI mast be reviewed and all unclear part studied or escaleted to learning plan and will be practiced.
-
-
-
- 
+- AI tools are used to accelerate drafting, exploration, and implementation.
+- All AI-generated output is manually reviewed before acceptance.
+- Final responsibility for architecture, correctness, and security remains with the project author.
+- Unclear AI-generated patterns are documented and added to the learning backlog.
