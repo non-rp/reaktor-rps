@@ -13,6 +13,7 @@ model Player {
 
   matchesA Match[] @relation("PlayerA")
   matchesB Match[] @relation("PlayerB")
+  dayStats PlayerDayStat[]
 }
 
 model Match {
@@ -74,4 +75,22 @@ model SyncedHistoryCursor {
   cursor String @id
 
   createdAt DateTime @default(now())
+}
+
+model PlayerDayStat {
+
+  playerId Int
+  day DateTime @db.Date
+
+  matches Int @default(0)
+  wins Int @default(0)
+  losses Int @default(0)
+  draws Int @default(0)
+  invalidMatches Int @default(0)
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([playerId, day])
+  @@index([day])
+  @@index([wins])
 }
