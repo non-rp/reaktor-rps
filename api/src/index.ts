@@ -4,6 +4,7 @@ import helmet from "helmet"; // security middleware(setting HTTP headers)
 import morgan from "morgan"; // loging middleware
 import dotenv from "dotenv";
 import historyRouter from "./modules/history/history.routes";
+import usersRouter from "./modules/users/users.routes";
 import { startHistorySyncJob } from "./modules/history/sync/historySync.job";
 import { startHistorySync } from "./modules/history/sync/historySync.service";
 
@@ -22,6 +23,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/history", historyRouter);
+app.use("/api/users", usersRouter);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
