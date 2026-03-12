@@ -3,9 +3,9 @@ import cors from "cors";
 import helmet from "helmet"; // security middleware(setting HTTP headers)
 import morgan from "morgan"; // loging middleware
 import dotenv from "dotenv";
-import historyRouter from "./routes/history";
-import { startHistorySyncJob } from "./jobs/historySyncJob";
-import { startHistorySync } from "./services/historySyncService";
+import historyRouter from "./modules/history/history.routes";
+import { startHistorySyncJob } from "./modules/history/sync/historySync.job";
+import { startHistorySync } from "./modules/history/sync/historySync.service";
 
 dotenv.config();
 

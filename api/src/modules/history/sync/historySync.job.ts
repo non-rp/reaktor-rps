@@ -1,13 +1,9 @@
 import cron from "node-cron"
-import { syncHistory } from "../services/historySyncService"
+import { startHistorySync } from "./historySync.service"
 
 export function startHistorySyncJob() {
-
 	cron.schedule("0 * * * *", async () => {
-
 		console.log("Running history sync")
-
-		await syncHistory()
-
+		await startHistorySync("cron")
 	})
 }
