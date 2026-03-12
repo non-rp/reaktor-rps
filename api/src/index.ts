@@ -4,6 +4,8 @@ import helmet from "helmet"; // security middleware(setting HTTP headers)
 import morgan from "morgan"; // loging middleware
 import dotenv from "dotenv";
 import historyRouter from "./routes/history";
+import { startHistorySyncJob } from "./jobs/historySyncJob";
+import { startHistorySync } from "./services/historySyncService";
 
 dotenv.config();
 
@@ -25,3 +27,7 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`API is running on port ${port}`);
 });
+
+startHistorySyncJob();
+
+void startHistorySync("startup");
