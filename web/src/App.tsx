@@ -1,34 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useCallback } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AppShell } from './components/layout/AppShell'
+import { LeaderboardPage } from './pages/LeaderboardPage'
+import { LatestMatchesPage } from './pages/LatestMatchesPage'
+import { MatchesPage } from './pages/MatchesPage'
+import { UserPage } from './pages/UserPage'
+import { resolveStaticRouteKey } from './routing'
+
+function UserRoute({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const { userId } = useParams<{ userId: string }>()
+  const parsedUserId = Number(userId)
+
+  if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+    return <Navigate to="/latest" replace />
+  }
+
+  return <UserPage userId={parsedUserId} onNavigate={onNavigate} />
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const activeStaticKey = resolveStaticRouteKey(pathname)
+
+  const onNavigate = useCallback(
+    (path: string) => {
+      navigate(path)
+    },
+    [navigate],
+  )
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <AppShell activeStaticKey={activeStaticKey} onNavigate={onNavigate}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/latest" replace />} />
+        <Route path="/latest" element={<LatestMatchesPage onNavigate={onNavigate} />} />
+        <Route path="/matches" element={<MatchesPage onNavigate={onNavigate} />} />
+        <Route path="/leaderboard" element={<LeaderboardPage onNavigate={onNavigate} />} />
+        <Route path="/users/:userId" element={<UserRoute onNavigate={onNavigate} />} />
+        <Route path="*" element={<Navigate to="/latest" replace />} />
+      </Routes>
+    </AppShell>
   )
 }
 
