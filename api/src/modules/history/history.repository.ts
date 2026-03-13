@@ -10,6 +10,11 @@ export type FindMatchesParams = {
 	playerName?: string
 }
 
+export type HistoryDateRangeRow = {
+	minTime: bigint | null
+	maxTime: bigint | null
+}
+
 export async function findMatches({
 	limit,
 	offset,
@@ -46,6 +51,32 @@ export async function findMatches({
 	return {
 		matches,
 		total
+	}
+}
+
+export async function findHistoryDateRange(): Promise<HistoryDateRangeRow> {
+	const [firstMatch, lastMatch] = await Promise.all([
+		prisma.match.findFirst({
+			orderBy: {
+				time: "asc"
+			},
+			select: {
+				time: true
+			}
+		}),
+		prisma.match.findFirst({
+			orderBy: {
+				time: "desc"
+			},
+			select: {
+				time: true
+			}
+		})
+	])
+
+	return {
+		minTime: firstMatch?.time ?? null,
+		maxTime: lastMatch?.time ?? null
 	}
 }
 
