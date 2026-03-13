@@ -26,7 +26,7 @@ jobs:
 
           script: |
 
-            cd /var/www/reactor-rps || exit
+            cd /var/www/rsp.vmel.dev || exit
 
             git pull origin main
 
