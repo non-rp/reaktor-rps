@@ -1,5 +1,7 @@
 # Rock-Paper-Scissors (RPS) Statistics Project
 
+CI status: ![Build](https://github.com/non-rp/reactor-rps/actions/workflows/production.yml/badge.svg)
+
 ## Requested Features 
 
 - Viewing the latest RPS match results
@@ -47,6 +49,14 @@
 - PostgreSQL as primary data store: relational model matches leaderboard and historical query needs.
 - OpenAPI/Swagger documentation: enables deterministic FE-BE integration and faster debugging.
 - Optional (non-blocking) enhancement: Redis caching for hot leaderboard queries if time permits.
+
+## Service scheme 
+```mermaid
+flowchart LR
+A[React App] --> B[Node API]
+B --> C[PostgreSQL]
+B --> D[RPS External API]
+```
 
 ## Delivery Plan
 
