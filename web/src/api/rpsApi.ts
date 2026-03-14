@@ -1,5 +1,5 @@
-import { apiGet } from './client'
-import type { LeaderboardResponse, MatchListResponse, UserProfileResponse } from '../types'
+import { apiGet, apiPost } from './client'
+import type { LeaderboardResponse, LiveStreamResponse, MatchListResponse, UserProfileResponse } from '../types'
 
 type GetMatchesFilters = {
   date?: string
@@ -21,7 +21,17 @@ export function getMatches(filters: GetMatchesFilters = {}) {
 }
 
 export function getLatestMatches(filters: Pick<GetMatchesFilters, 'limit' | 'offset'> = {}) {
-  return getMatches(filters)
+  return apiGet<LiveStreamResponse>('live/stream', filters)
+}
+
+export function refreshLatestMatches(
+  filters: Pick<GetMatchesFilters, 'limit' | 'offset'> = {},
+  options: {
+    sessionMs?: number
+    maxMatches?: number
+  } = {},
+) {
+  return apiPost<LiveStreamResponse & { status: 'started' | 'already_running' }>('live/stream', options, filters)
 }
 
 export function getMatchesByDay(day: string) {

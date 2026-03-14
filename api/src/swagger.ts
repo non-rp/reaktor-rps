@@ -20,6 +20,7 @@ export const swaggerSpec = swaggerJsdoc({
 		tags: [
 			{ name: "Health", description: "Service health checks" },
 			{ name: "History", description: "Match history and sync endpoints" },
+			{ name: "Live", description: "Live match stream cache and sync endpoints" },
 			{ name: "Users", description: "User profiles and leaderboard endpoints" }
 		],
 		components: {
@@ -112,6 +113,106 @@ export const swaggerSpec = swaggerJsdoc({
 						}
 					},
 					required: ["items", "paging", "filters"]
+				},
+				LivePlayerRef: {
+					type: "object",
+					properties: {
+						id: { type: "integer", nullable: true, example: 42 },
+						name: { type: "string", example: "alice" }
+					},
+					required: ["id", "name"]
+				},
+				LiveMatch: {
+					type: "object",
+					properties: {
+						id: { type: "integer", example: 123456 },
+						gameId: { type: "string", example: "match_live_1" },
+						time: { type: "string", example: "1741737600000" },
+						result: {
+							type: "string",
+							enum: ["A", "B", "DRAW", "INVALID"],
+							example: "A"
+						},
+						playerA: { $ref: "#/components/schemas/LivePlayerRef" },
+						playerB: { $ref: "#/components/schemas/LivePlayerRef" },
+						playerAMove: { type: "string", example: "rock" },
+						playerBMove: { type: "string", example: "scissors" },
+						playerAMoveValid: { type: "boolean", example: true },
+						playerBMoveValid: { type: "boolean", example: true },
+						isValid: { type: "boolean", example: true },
+						invalidReason: { type: "string", nullable: true, example: null },
+						receivedAt: {
+							type: "string",
+							format: "date-time",
+							example: "2026-03-14T18:10:00.000Z"
+						}
+					},
+					required: [
+						"id",
+						"gameId",
+						"time",
+						"result",
+						"playerA",
+						"playerB",
+						"playerAMove",
+						"playerBMove",
+						"playerAMoveValid",
+						"playerBMoveValid",
+						"isValid",
+						"invalidReason",
+						"receivedAt"
+					]
+				},
+				LiveStreamSyncState: {
+					type: "object",
+					properties: {
+						isRunning: { type: "boolean", example: false },
+						lastStartedAt: { type: "string", format: "date-time", nullable: true },
+						lastCompletedAt: { type: "string", format: "date-time", nullable: true },
+						lastEventAt: { type: "string", format: "date-time", nullable: true },
+						lastError: { type: "string", nullable: true, example: null },
+						triggerSource: { type: "string", nullable: true, example: "manual" },
+						sessionMs: { type: "integer", nullable: true, example: 15000 },
+						maxMatches: { type: "integer", nullable: true, example: 25 }
+					},
+					required: [
+						"isRunning",
+						"lastStartedAt",
+						"lastCompletedAt",
+						"lastEventAt",
+						"lastError",
+						"triggerSource",
+						"sessionMs",
+						"maxMatches"
+					]
+				},
+				LiveStreamResponse: {
+					type: "object",
+					properties: {
+						items: {
+							type: "array",
+							items: { $ref: "#/components/schemas/LiveMatch" }
+						},
+						paging: {
+							type: "object",
+							properties: {
+								limit: { type: "integer", example: 25 },
+								offset: { type: "integer", example: 0 },
+								total: { type: "integer", example: 42 }
+							},
+							required: ["limit", "offset", "total"]
+						},
+						cache: {
+							type: "object",
+							properties: {
+								total: { type: "integer", example: 42 },
+								maxItems: { type: "integer", example: 200 }
+							},
+							required: ["total", "maxItems"]
+						},
+						sync: { $ref: "#/components/schemas/LiveStreamSyncState" }
+					},
+					required: ["items", "paging", "cache", "sync"]
 				},
 				UserStats: {
 					type: "object",
@@ -243,6 +344,22 @@ export const swaggerSpec = swaggerJsdoc({
 						sync: { $ref: "#/components/schemas/SyncState" }
 					},
 					required: ["status", "sync"]
+				},
+				LiveSyncStartResponse: {
+					allOf: [
+						{ $ref: "#/components/schemas/LiveStreamResponse" },
+						{
+							type: "object",
+							properties: {
+								status: {
+									type: "string",
+									enum: ["started", "already_running"],
+									example: "started"
+								}
+							},
+							required: ["status"]
+						}
+					]
 				},
 				HealthResponse: {
 					type: "object",

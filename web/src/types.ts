@@ -1,5 +1,5 @@
 export type PlayerRef = {
-  id: number
+  id: number | null
   name: string
 }
 
@@ -22,6 +22,27 @@ export type MatchListResponse = {
   items: Match[]
   paging: Paging
   range: DateRangeResponse
+}
+
+export type LiveStreamSyncState = {
+  isRunning: boolean
+  lastStartedAt: string | null
+  lastCompletedAt: string | null
+  lastEventAt: string | null
+  lastError: string | null
+  triggerSource: string | null
+  sessionMs: number | null
+  maxMatches: number | null
+}
+
+export type LiveStreamResponse = {
+  items: Match[]
+  paging: Paging
+  cache: {
+    total: number
+    maxItems: number
+  }
+  sync: LiveStreamSyncState
 }
 
 export type DateRangeResponse = {
