@@ -22,6 +22,13 @@ export type MatchListResponse = {
   items: Match[]
   paging: Paging
   range: DateRangeResponse
+  filters?: {
+    from: string | null
+    to: string | null
+    playerId: number | null
+    playerName: string | null
+    sortOrder: 'asc' | 'desc'
+  }
 }
 
 export type LiveStreamSyncState = {
