@@ -13,7 +13,7 @@ export function formatTimestamp(timestamp: string): string {
   const minutes = String(date.getUTCMinutes()).padStart(2, '0')
   const seconds = String(date.getUTCSeconds()).padStart(2, '0')
 
-  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds} UTC`
+  return `${month}-${day}-${year} ${hours}:${minutes}:${seconds} UTC`
 }
 
 export function todayIsoDate(): string {
