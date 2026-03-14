@@ -32,7 +32,7 @@ export function MatchesTable({
       <Table size="small" sx={{ opacity: loading ? 0.75 : 1 }}>
         <TableHead>
           <TableRow>
-            <TableCell>Time</TableCell>
+            <TableCell>Time (UTC)</TableCell>
             <TableCell>Player A</TableCell>
             <TableCell>Player B</TableCell>
             <TableCell>Result</TableCell>
