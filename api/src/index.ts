@@ -23,7 +23,7 @@ app.use(morgan(format));
 app.use(express.json());
 app.use("/api", rateLimit({
   windowMs: 1000,
-  limit: 1,
+  limit: 10,
 }));
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
