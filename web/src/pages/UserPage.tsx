@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Card, CardContent, LinearProgress, Link, Stack, Typography } from '@mui/material'
 import { getUserProfile } from '../api/rpsApi'
 import { PageCard } from '../components/common/PageCard'
-import { MatchesTable } from '../components/tables/MatchesTable'
+import { MatchesTable, type MatchSortOrder } from '../components/tables/MatchesTable'
 import { usePagination } from '../hooks/usePagination'
 import type { UserProfileResponse } from '../types'
 
@@ -15,6 +15,7 @@ export function UserPage({ userId, onNavigate }: UserPageProps) {
   const [data, setData] = useState<UserProfileResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sortOrder, setSortOrder] = useState<MatchSortOrder>('desc')
   const { pagination, setPage, setRowsPerPage } = usePagination()
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export function UserPage({ userId, onNavigate }: UserPageProps) {
         const response = await getUserProfile(userId, {
           limit: pagination.rowsPerPage,
           offset: pagination.page * pagination.rowsPerPage,
+          sortOrder,
         })
 
         if (!cancelled) {
@@ -48,7 +50,7 @@ export function UserPage({ userId, onNavigate }: UserPageProps) {
     return () => {
       cancelled = true
     }
-  }, [pagination.page, pagination.rowsPerPage, userId])
+  }, [pagination.page, pagination.rowsPerPage, sortOrder, userId])
 
   return (
     <Stack spacing={2}>
@@ -100,6 +102,11 @@ export function UserPage({ userId, onNavigate }: UserPageProps) {
               onPageChange={setPage}
               onRowsPerPageChange={setRowsPerPage}
               onNavigate={onNavigate}
+              sortOrder={sortOrder}
+              onSortOrderChange={(nextSortOrder) => {
+                setSortOrder(nextSortOrder)
+                setPage(0)
+              }}
             />
           </PageCard>
         </>

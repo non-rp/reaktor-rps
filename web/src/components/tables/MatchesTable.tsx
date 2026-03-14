@@ -1,8 +1,10 @@
-import { Box, Skeleton, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Typography, LinearProgress } from '@mui/material'
+import { Box, LinearProgress, Skeleton, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, Typography } from '@mui/material'
 import type { Match } from '../../types'
 import { formatTimestamp } from '../../utils/format'
 import { UserProfileLink } from '../common/UserProfileLink'
 import { ROWS_PER_PAGE_OPTIONS, type PaginationState } from './pagination'
+
+export type MatchSortOrder = 'asc' | 'desc'
 
 type MatchesTableProps = {
   items: Match[]
@@ -12,6 +14,8 @@ type MatchesTableProps = {
   onPageChange: (page: number) => void
   onRowsPerPageChange: (rowsPerPage: number) => void
   onNavigate: (path: string) => void
+  sortOrder?: MatchSortOrder
+  onSortOrderChange?: (sortOrder: MatchSortOrder) => void
 }
 
 export function MatchesTable({
@@ -22,6 +26,8 @@ export function MatchesTable({
   onPageChange,
   onRowsPerPageChange,
   onNavigate,
+  sortOrder,
+  onSortOrderChange,
 }: MatchesTableProps) {
   const { page, rowsPerPage } = pagination
   const pagedItems = typeof totalCount === 'number' ? items : items.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -33,7 +39,19 @@ export function MatchesTable({
       <Table size="small" sx={{ opacity: loading ? 0.75 : 1 }}>
         <TableHead>
           <TableRow>
-            <TableCell>Time (UTC)</TableCell>
+            <TableCell sortDirection={sortOrder ?? false}>
+              {sortOrder && onSortOrderChange ? (
+                <TableSortLabel
+                  active
+                  direction={sortOrder}
+                  onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  Time (UTC)
+                </TableSortLabel>
+              ) : (
+                'Time (UTC)'
+              )}
+            </TableCell>
             <TableCell>Player A</TableCell>
             <TableCell>Player B</TableCell>
             <TableCell>Result</TableCell>

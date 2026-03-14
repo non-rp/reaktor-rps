@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material'
 import { getMatches } from '../api/rpsApi'
 import { PageCard } from '../components/common/PageCard'
-import { MatchesTable } from '../components/tables/MatchesTable'
+import { MatchesTable, type MatchSortOrder } from '../components/tables/MatchesTable'
 import { usePagination } from '../hooks/usePagination'
 import type { Match } from '../types'
 import { todayIsoDate } from '../utils/format'
@@ -15,6 +15,7 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
   const [day, setDay] = useState(todayIsoDate())
   const [playerName, setPlayerName] = useState('')
   const [filters, setFilters] = useState({ day: todayIsoDate(), playerName: '' })
+  const [sortOrder, setSortOrder] = useState<MatchSortOrder>('desc')
   const [items, setItems] = useState<Match[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -33,6 +34,7 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
           playerName: filters.playerName,
           limit: pagination.rowsPerPage,
           offset: pagination.page * pagination.rowsPerPage,
+          sortOrder,
         })
 
         if (cancelled) {
@@ -57,7 +59,7 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
     return () => {
       cancelled = true
     }
-  }, [filters.day, filters.playerName, pagination.page, pagination.rowsPerPage])
+  }, [filters.day, filters.playerName, pagination.page, pagination.rowsPerPage, sortOrder])
 
   return (
     <Stack spacing={2}>
@@ -115,6 +117,11 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
           onPageChange={setPage}
           onRowsPerPageChange={setRowsPerPage}
           onNavigate={onNavigate}
+          sortOrder={sortOrder}
+          onSortOrderChange={(nextSortOrder) => {
+            setSortOrder(nextSortOrder)
+            resetPage()
+          }}
         />
       </PageCard>
     </Stack>
