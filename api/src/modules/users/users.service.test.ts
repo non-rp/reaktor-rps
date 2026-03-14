@@ -105,7 +105,8 @@ describe("users.service", () => {
 				limit: 25,
 				offset: 0,
 				from: undefined,
-				to: undefined
+				to: undefined,
+				sortOrder: "desc"
 			})
 		).resolves.toBeNull();
 	});
@@ -125,14 +126,21 @@ describe("users.service", () => {
 			items: [],
 			paging: { limit: 25, offset: 0, total: 0 },
 			range: { from: null, to: null },
-			filters: { from: null, to: null, playerId: 7, playerName: null }
+			filters: {
+				from: null,
+				to: null,
+				playerId: 7,
+				playerName: null,
+				sortOrder: "desc"
+			}
 		});
 
 		const result = await getUserProfile(7, {
 			limit: 25,
 			offset: 0,
 			from: undefined,
-			to: undefined
+			to: undefined,
+			sortOrder: "desc"
 		});
 
 		expect(result?.user).toMatchObject({
@@ -142,7 +150,8 @@ describe("users.service", () => {
 		});
 		expect(getMatches).toHaveBeenCalledWith(
 			expect.objectContaining({
-				playerId: 7
+				playerId: 7,
+				sortOrder: "desc"
 			})
 		);
 	});
