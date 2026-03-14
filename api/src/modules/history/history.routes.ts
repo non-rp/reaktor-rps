@@ -53,6 +53,12 @@ const router = Router()
  *         schema:
  *           type: string
  *           format: date
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
  *     responses:
  *       200:
  *         description: Paginated match history

@@ -121,7 +121,7 @@ export async function findLeaderboard(params: Omit<FindUsersParams, "sortBy" | "
 			FROM stats
 			INNER JOIN "Player" p ON p."id" = stats."playerId"
 			WHERE stats."matches" > 0
-			ORDER BY stats."wins" DESC, stats."matches" DESC, p."name" ASC
+			ORDER BY stats."wins" DESC, p."name" ASC
 			LIMIT ${params.limit}
 			OFFSET ${params.offset}
 		`),

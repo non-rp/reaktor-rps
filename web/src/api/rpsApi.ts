@@ -7,6 +7,7 @@ type GetMatchesFilters = {
   playerId?: number
   limit?: number
   offset?: number
+  sortOrder?: 'asc' | 'desc'
 }
 
 type GetLeaderboardFilters = {
@@ -61,6 +62,7 @@ export function getUserProfile(
     to?: string
     limit?: number
     offset?: number
+    sortOrder?: 'asc' | 'desc'
   } = {},
 ) {
   return apiGet<UserProfileResponse>(`users/${userId}`, filters)

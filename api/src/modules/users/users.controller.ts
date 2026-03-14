@@ -31,7 +31,10 @@ export async function getUserHandler(req: Request, res: Response, next: NextFunc
 		}
 
 		const params = parseRangeAndPaging(req)
-		const result = await getUserProfile(userId, params)
+		const result = await getUserProfile(userId, {
+			...params,
+			sortOrder: parseSortOrder(req.query.sortOrder)
+		})
 
 		if (!result) {
 			res.status(404).json({ message: "User not found" })
