@@ -8,6 +8,7 @@ export type FindMatchesParams = {
 	to?: Date
 	playerId?: number
 	playerName?: string
+	sortOrder?: "asc" | "desc"
 }
 
 export type HistoryDateRangeRow = {
@@ -21,7 +22,8 @@ export async function findMatches({
 	from,
 	to,
 	playerId,
-	playerName
+	playerName,
+	sortOrder = "desc"
 }: FindMatchesParams) {
 	const where = buildMatchWhere({
 		from,
@@ -38,7 +40,7 @@ export async function findMatches({
 				playerB: true
 			},
 			orderBy: {
-				time: "desc"
+				time: sortOrder
 			},
 			take: limit,
 			skip: offset

@@ -47,7 +47,7 @@ export async function listUsers(params: FindUsersParams): Promise<UserListRespon
 
 export async function getUserProfile(
 	playerId: number,
-	params: Omit<FindUsersParams, "sortBy" | "sortOrder" | "query">
+	params: Omit<FindUsersParams, "sortBy" | "query">
 ): Promise<{
 	user: UserStatsRow & { winRate: number | null }
 	matches: Awaited<ReturnType<typeof getMatches>>
@@ -68,7 +68,8 @@ export async function getUserProfile(
 			offset: params.offset,
 			from: params.from,
 			to: params.to,
-			playerId
+			playerId,
+			sortOrder: params.sortOrder
 		})
 	])
 

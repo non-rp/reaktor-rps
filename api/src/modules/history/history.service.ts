@@ -8,6 +8,7 @@ export type GetMatchesParams = {
 	to?: Date
 	playerId?: number
 	playerName?: string
+	sortOrder?: "asc" | "desc"
 }
 
 export type PaginatedMatches = {
@@ -26,6 +27,7 @@ export type PaginatedMatches = {
 		to: string | null
 		playerId: number | null
 		playerName: string | null
+		sortOrder: "asc" | "desc"
 	}
 }
 
@@ -40,7 +42,8 @@ export async function getMatches({
 	from,
 	to,
 	playerId,
-	playerName
+	playerName,
+	sortOrder = "desc"
 }: GetMatchesParams): Promise<PaginatedMatches> {
 	const [{ matches, total }, range] = await Promise.all([
 		findMatches({
@@ -49,7 +52,8 @@ export async function getMatches({
 			from,
 			to,
 			playerId,
-			playerName
+			playerName,
+			sortOrder
 		}),
 		getHistoryDateRange()
 	])
@@ -66,7 +70,8 @@ export async function getMatches({
 			from: from?.toISOString() ?? null,
 			to: to?.toISOString() ?? null,
 			playerId: playerId ?? null,
-			playerName: playerName ?? null
+			playerName: playerName ?? null,
+			sortOrder
 		}
 	}
 }

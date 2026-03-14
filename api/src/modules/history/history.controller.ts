@@ -12,6 +12,7 @@ export async function listHistory(req: Request, res: Response, next: NextFunctio
 		const playerId = parseOptionalPositiveInt(req.query.playerId)
 		const playerName = parseOptionalString(req.query.playerName)
 		const { from, to } = parseHistoryDateFilters(req.query.date, req.query.from, req.query.to)
+		const sortOrder = parseSortOrder(req.query.sortOrder)
 
 		const matches = await getMatches({
 			limit,
@@ -19,7 +20,8 @@ export async function listHistory(req: Request, res: Response, next: NextFunctio
 			from,
 			to,
 			playerId,
-			playerName
+			playerName,
+			sortOrder
 		})
 
 		res.json(matches)
@@ -106,6 +108,10 @@ function parseOptionalString(value: unknown): string | undefined {
 	const normalized = value.trim()
 
 	return normalized === "" ? undefined : normalized
+}
+
+function parseSortOrder(value: unknown): "asc" | "desc" {
+	return value === "asc" ? "asc" : "desc"
 }
 
 function parseHistoryDateFilters(
