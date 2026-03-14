@@ -12,23 +12,27 @@ type LatestMatchesPageProps = {
 
 export function LatestMatchesPage({ onNavigate }: LatestMatchesPageProps) {
   const [items, setItems] = useState<Match[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { pagination, setPage, setRowsPerPage, resetPage } = usePagination()
+  const { pagination, setPage, setRowsPerPage } = usePagination()
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await getLatestMatches()
+      const response = await getLatestMatches({
+        limit: pagination.rowsPerPage,
+        offset: pagination.page * pagination.rowsPerPage,
+      })
       setItems(response.items)
-      resetPage()
+      setTotalCount(response.paging.total)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
-  }, [resetPage])
+  }, [pagination.page, pagination.rowsPerPage])
 
   useEffect(() => {
     void load()
@@ -46,6 +50,7 @@ export function LatestMatchesPage({ onNavigate }: LatestMatchesPageProps) {
         {error ? <Alert severity="error">{error}</Alert> : null}
         <MatchesTable
           items={items}
+          totalCount={totalCount}
           loading={loading}
           pagination={pagination}
           onPageChange={setPage}
