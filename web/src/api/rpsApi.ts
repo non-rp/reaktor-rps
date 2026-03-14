@@ -1,8 +1,6 @@
 import { apiGet } from './client'
 import type { LeaderboardResponse, MatchListResponse, UserProfileResponse } from '../types'
 
-const FETCH_LIMIT = 500
-
 type GetMatchesFilters = {
   date?: string
   playerName?: string
@@ -19,7 +17,7 @@ type GetLeaderboardFilters = {
 }
 
 export function getMatches(filters: GetMatchesFilters = {}) {
-  return apiGet<MatchListResponse>('history', { limit: FETCH_LIMIT, offset: 0, ...filters })
+  return apiGet<MatchListResponse>('history', filters)
 }
 
 export function getLatestMatches(filters: Pick<GetMatchesFilters, 'limit' | 'offset'> = {}) {
@@ -35,7 +33,7 @@ export function getMatchesByPlayer(playerName: string) {
 }
 
 export function getLeaderboard(filters: GetLeaderboardFilters) {
-  return apiGet<LeaderboardResponse>('users/leaderboard', { limit: FETCH_LIMIT, offset: 0, ...filters })
+  return apiGet<LeaderboardResponse>('users/leaderboard', filters)
 }
 
 export function getTodayLeaderboard(day: string) {
@@ -55,5 +53,5 @@ export function getUserProfile(
     offset?: number
   } = {},
 ) {
-  return apiGet<UserProfileResponse>(`users/${userId}`, { limit: FETCH_LIMIT, offset: 0, ...filters })
+  return apiGet<UserProfileResponse>(`users/${userId}`, filters)
 }
