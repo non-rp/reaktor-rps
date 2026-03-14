@@ -4,7 +4,7 @@ import { getMatches } from '../api/rpsApi'
 import { PageCard } from '../components/common/PageCard'
 import { MatchesTable } from '../components/tables/MatchesTable'
 import { usePagination } from '../hooks/usePagination'
-import type { DateRangeResponse, Match } from '../types'
+import type { Match } from '../types'
 import { todayIsoDate } from '../utils/format'
 
 type MatchesPageProps = {
@@ -15,13 +15,9 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
   const [day, setDay] = useState(todayIsoDate())
   const [playerName, setPlayerName] = useState('')
   const [items, setItems] = useState<Match[]>([])
-  const [range, setRange] = useState<DateRangeResponse>({ from: null, to: null })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { pagination, setPage, setRowsPerPage, resetPage } = usePagination()
-  const minDate = range.from
-  const maxDate = range.to
-  const hasRange = Boolean(minDate && maxDate)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -29,7 +25,6 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
     try {
       const response = await getMatches({ date: day, playerName })
       setItems(response.items)
-      setRange(response.range)
       resetPage()
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown error')
@@ -42,14 +37,6 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
     void load()
   }, [load])
 
-  useEffect(() => {
-    if (!minDate || !maxDate) {
-      return
-    }
-
-    setDay((current) => clampDate(current, minDate, maxDate))
-  }, [minDate, maxDate])
-
   return (
     <Stack spacing={2}>
       <Typography variant="h4">Matches</Typography>
@@ -59,31 +46,24 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
             type="date"
             label="Day"
             value={day}
-            onChange={(event) => {
-              const next = event.target.value
-              setDay(minDate && maxDate ? clampDate(next, minDate, maxDate) : next)
-            }}
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ min: minDate ?? undefined, max: maxDate ?? undefined }}
-            disabled={!hasRange}
+            onChange={(event) => setDay(event.target.value)}
           />
           <TextField
             label="Player name"
             value={playerName}
             onChange={(event) => setPlayerName(event.target.value)}
-            placeholder="alice"
+            placeholder="Amara Chen"
           />
-          <Button variant="contained" onClick={() => void load()} disabled={loading || !hasRange}>
+          <Button variant="contained" onClick={() => void load()} disabled={loading}>
             Load
           </Button>
           <Button
             variant="text"
             onClick={() => {
-              const today = todayIsoDate()
-              setDay(minDate && maxDate ? clampDate(today, minDate, maxDate) : today)
+              setDay(todayIsoDate())
               setPlayerName('')
             }}
-            disabled={loading || !hasRange}
+            disabled={loading}
           >
             Reset
           </Button>
@@ -100,16 +80,4 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
       </PageCard>
     </Stack>
   )
-}
-
-function clampDate(value: string, min: string, max: string): string {
-  if (!value || value < min) {
-    return min
-  }
-
-  if (value > max) {
-    return max
-  }
-
-  return value
 }
