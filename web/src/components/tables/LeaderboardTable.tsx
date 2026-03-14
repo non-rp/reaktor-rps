@@ -5,6 +5,7 @@ import { ROWS_PER_PAGE_OPTIONS, type PaginationState } from './pagination'
 
 type LeaderboardTableProps = {
   items: LeaderboardItem[]
+  totalCount?: number
   loading: boolean
   pagination: PaginationState
   onPageChange: (page: number) => void
@@ -14,6 +15,7 @@ type LeaderboardTableProps = {
 
 export function LeaderboardTable({
   items,
+  totalCount,
   loading,
   pagination,
   onPageChange,
@@ -21,8 +23,7 @@ export function LeaderboardTable({
   onNavigate,
 }: LeaderboardTableProps) {
   const { page, rowsPerPage } = pagination
-  const startIndex = page * rowsPerPage
-  const pagedItems = items.slice(startIndex, startIndex + rowsPerPage)
+  const pagedItems = typeof totalCount === 'number' ? items : items.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
   const emptyRows = Math.max(rowsPerPage - pagedItems.length, 0)
 
   return (
@@ -77,7 +78,7 @@ export function LeaderboardTable({
       </Table>
       <TablePagination
         component="div"
-        count={items.length}
+        count={totalCount ?? items.length}
         page={page}
         onPageChange={(_, nextPage) => onPageChange(nextPage)}
         rowsPerPage={rowsPerPage}

@@ -15,25 +15,40 @@ export function UserPage({ userId, onNavigate }: UserPageProps) {
   const [data, setData] = useState<UserProfileResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { pagination, setPage, setRowsPerPage, resetPage } = usePagination()
+  const { pagination, setPage, setRowsPerPage } = usePagination()
 
   useEffect(() => {
+    let cancelled = false
+
     async function loadUser() {
       setLoading(true)
       setError(null)
       try {
-        const response = await getUserProfile(userId)
-        setData(response)
-        resetPage()
+        const response = await getUserProfile(userId, {
+          limit: pagination.rowsPerPage,
+          offset: pagination.page * pagination.rowsPerPage,
+        })
+
+        if (!cancelled) {
+          setData(response)
+        }
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Unknown error')
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : 'Unknown error')
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
     void loadUser()
-  }, [userId, resetPage])
+
+    return () => {
+      cancelled = true
+    }
+  }, [pagination.page, pagination.rowsPerPage, userId])
 
   return (
     <Stack spacing={2}>
@@ -79,6 +94,7 @@ export function UserPage({ userId, onNavigate }: UserPageProps) {
           <PageCard title="User Match History">
             <MatchesTable
               items={data.matches.items}
+              totalCount={data.matches.paging.total}
               loading={loading}
               pagination={pagination}
               onPageChange={setPage}

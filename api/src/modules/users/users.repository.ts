@@ -101,26 +101,42 @@ export async function getUserStats(
 	return userStats
 }
 
-export async function findLeaderboard(params: Omit<FindUsersParams, "sortBy" | "sortOrder" | "query">): Promise<UserStatsRow[]> {
+export async function findLeaderboard(params: Omit<FindUsersParams, "sortBy" | "sortOrder" | "query">): Promise<{
+	items: UserStatsRow[]
+	total: number
+}> {
 	const statsCte = buildStatsCte(params.from, params.to)
 
-	return prisma.$queryRaw<UserStatsRow[]>(Prisma.sql`
-		${statsCte}
-		SELECT
-			p."id",
-			p."name",
-			stats."matches"::INTEGER AS "matches",
-			stats."wins"::INTEGER AS "wins",
-			stats."losses"::INTEGER AS "losses",
-			stats."draws"::INTEGER AS "draws",
-			stats."invalidMatches"::INTEGER AS "invalidMatches"
-		FROM stats
-		INNER JOIN "Player" p ON p."id" = stats."playerId"
-		WHERE stats."matches" > 0
-		ORDER BY stats."wins" DESC, stats."matches" DESC, p."name" ASC
-		LIMIT ${params.limit}
-		OFFSET ${params.offset}
-	`)
+	const [items, [countRow]] = await Promise.all([
+		prisma.$queryRaw<UserStatsRow[]>(Prisma.sql`
+			${statsCte}
+			SELECT
+				p."id",
+				p."name",
+				stats."matches"::INTEGER AS "matches",
+				stats."wins"::INTEGER AS "wins",
+				stats."losses"::INTEGER AS "losses",
+				stats."draws"::INTEGER AS "draws",
+				stats."invalidMatches"::INTEGER AS "invalidMatches"
+			FROM stats
+			INNER JOIN "Player" p ON p."id" = stats."playerId"
+			WHERE stats."matches" > 0
+			ORDER BY stats."wins" DESC, stats."matches" DESC, p."name" ASC
+			LIMIT ${params.limit}
+			OFFSET ${params.offset}
+		`),
+		prisma.$queryRaw<Array<{ total: bigint }>>(Prisma.sql`
+			${statsCte}
+			SELECT COUNT(*)::BIGINT AS "total"
+			FROM stats
+			WHERE stats."matches" > 0
+		`)
+	])
+
+	return {
+		items,
+		total: Number(countRow?.total ?? 0n)
+	}
 }
 
 function buildPlayerWhere(query?: string): Prisma.Sql {

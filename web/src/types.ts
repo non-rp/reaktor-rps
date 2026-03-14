@@ -46,6 +46,7 @@ export type LeaderboardItem = UserStats & {
 
 export type LeaderboardResponse = {
   items: LeaderboardItem[]
+  paging: Paging
 }
 
 export type UserProfileResponse = {

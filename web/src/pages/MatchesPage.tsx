@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material'
 import { getMatches } from '../api/rpsApi'
 import { PageCard } from '../components/common/PageCard'
 import { MatchesTable } from '../components/tables/MatchesTable'
 import { usePagination } from '../hooks/usePagination'
-import type { DateRangeResponse, Match } from '../types'
+import type { Match } from '../types'
 import { todayIsoDate } from '../utils/format'
 
 type MatchesPageProps = {
@@ -14,41 +14,50 @@ type MatchesPageProps = {
 export function MatchesPage({ onNavigate }: MatchesPageProps) {
   const [day, setDay] = useState(todayIsoDate())
   const [playerName, setPlayerName] = useState('')
+  const [filters, setFilters] = useState({ day: todayIsoDate(), playerName: '' })
   const [items, setItems] = useState<Match[]>([])
-  const [range, setRange] = useState<DateRangeResponse>({ from: null, to: null })
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { pagination, setPage, setRowsPerPage, resetPage } = usePagination()
-  const minDate = range.from
-  const maxDate = range.to
-  const hasRange = Boolean(minDate && maxDate)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await getMatches({ date: day, playerName })
-      setItems(response.items)
-      setRange(response.range)
-      resetPage()
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }, [day, playerName, resetPage])
 
   useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await getMatches({
+          date: filters.day,
+          playerName: filters.playerName,
+          limit: pagination.rowsPerPage,
+          offset: pagination.page * pagination.rowsPerPage,
+        })
+
+        if (cancelled) {
+          return
+        }
+
+        setItems(response.items)
+        setTotalCount(response.paging.total)
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : 'Unknown error')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
     void load()
-  }, [load])
 
-  useEffect(() => {
-    if (!minDate || !maxDate) {
-      return
+    return () => {
+      cancelled = true
     }
-
-    setDay((current) => clampDate(current, minDate, maxDate))
-  }, [minDate, maxDate])
+  }, [filters.day, filters.playerName, pagination.page, pagination.rowsPerPage])
 
   return (
     <Stack spacing={2}>
@@ -60,30 +69,39 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
             label="Day"
             value={day}
             onChange={(event) => {
-              const next = event.target.value
-              setDay(minDate && maxDate ? clampDate(next, minDate, maxDate) : next)
+              const nextDay = event.target.value
+              setDay(nextDay)
+              setFilters((current) => ({ ...current, day: nextDay }))
+              resetPage()
             }}
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ min: minDate ?? undefined, max: maxDate ?? undefined }}
-            disabled={!hasRange}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label="Player name"
             value={playerName}
             onChange={(event) => setPlayerName(event.target.value)}
-            placeholder="alice"
+            placeholder="Amara Chen"
           />
-          <Button variant="contained" onClick={() => void load()} disabled={loading || !hasRange}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setFilters({ day, playerName })
+              resetPage()
+            }}
+            disabled={loading}
+          >
             Load
           </Button>
           <Button
             variant="text"
             onClick={() => {
               const today = todayIsoDate()
-              setDay(minDate && maxDate ? clampDate(today, minDate, maxDate) : today)
+              setDay(today)
               setPlayerName('')
+              setFilters({ day: today, playerName: '' })
+              resetPage()
             }}
-            disabled={loading || !hasRange}
+            disabled={loading}
           >
             Reset
           </Button>
@@ -91,6 +109,7 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
         {error ? <Alert severity="error">{error}</Alert> : null}
         <MatchesTable
           items={items}
+          totalCount={totalCount}
           loading={loading}
           pagination={pagination}
           onPageChange={setPage}
@@ -100,16 +119,4 @@ export function MatchesPage({ onNavigate }: MatchesPageProps) {
       </PageCard>
     </Stack>
   )
-}
-
-function clampDate(value: string, min: string, max: string): string {
-  if (!value || value < min) {
-    return min
-  }
-
-  if (value > max) {
-    return max
-  }
-
-  return value
 }
