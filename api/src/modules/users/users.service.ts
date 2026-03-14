@@ -92,9 +92,10 @@ export async function getLeaderboard(
 	paging: {
 		limit: number
 		offset: number
+		total: number
 	}
 }> {
-	const items = await findLeaderboard(params)
+	const { items, total } = await findLeaderboard(params)
 
 	return {
 		items: items.map((item, index) => ({
@@ -107,7 +108,8 @@ export async function getLeaderboard(
 		},
 		paging: {
 			limit: params.limit,
-			offset: params.offset
+			offset: params.offset,
+			total
 		}
 	}
 }
