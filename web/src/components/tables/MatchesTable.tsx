@@ -3,6 +3,7 @@ import type { Match } from '../../types'
 import { formatTimestamp } from '../../utils/format'
 import { UserProfileLink } from '../common/UserProfileLink'
 import { ROWS_PER_PAGE_OPTIONS, type PaginationState } from './pagination'
+import IconWinner from '../common/IconWinner'
 
 export type MatchSortOrder = 'asc' | 'desc'
 
@@ -70,11 +71,17 @@ export function MatchesTable({
           {pagedItems.map((match) => (
             <TableRow key={match.id}>
               <TableCell>{formatTimestamp(match.time)}</TableCell>
-              <TableCell>
-                <UserProfileLink id={match.playerA.id} name={match.playerA.name} onNavigate={onNavigate} />
+              <TableCell >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <UserProfileLink id={match.playerA.id} name={match.playerA.name} onNavigate={onNavigate} />
+                  {match.result === 'A' && <IconWinner /> }
+                </Box>
               </TableCell>
               <TableCell>
-                <UserProfileLink id={match.playerB.id} name={match.playerB.name} onNavigate={onNavigate} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <UserProfileLink id={match.playerB.id} name={match.playerB.name} onNavigate={onNavigate} />
+                  {match.result === 'B' && <IconWinner /> }
+                </Box>
               </TableCell>
               <TableCell>{match.result == "DRAW" ? "TIE" : match.result}</TableCell>
             </TableRow>
