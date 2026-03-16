@@ -93,6 +93,7 @@ describe('LatestMatchesPage', () => {
 
   it('ignores 429 errors during silent polling', async () => {
     let pollCallback: (() => void) | undefined
+    const intervalHandle = 1 as unknown as ReturnType<typeof window.setInterval>
 
     vi.spyOn(window, 'setInterval').mockImplementation((handler) => {
       pollCallback = () => {
@@ -101,7 +102,7 @@ describe('LatestMatchesPage', () => {
         }
       }
 
-      return 1
+      return intervalHandle
     })
 
     vi.spyOn(window, 'clearInterval').mockImplementation(() => {})
