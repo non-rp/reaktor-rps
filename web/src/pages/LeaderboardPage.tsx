@@ -19,6 +19,7 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [fallbackDate, setFallbackDate] = useState<string | null>(null)
   const { pagination, setPage, setRowsPerPage, resetPage } = usePagination()
 
   useEffect(() => {
@@ -41,6 +42,16 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
 
         setItems(response.items)
         setTotalCount(response.paging.total)
+        if (response.filters.fallbackApplied) {
+          const effectiveFrom = response.filters.from.slice(0, 10)
+          const effectiveTo = inclusiveDateFromExclusiveTo(response.filters.to)
+
+          setFromDate(effectiveFrom)
+          setToDate(effectiveTo)
+          setFallbackDate(effectiveFrom)
+        } else {
+          setFallbackDate(null)
+        }
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : 'Unknown error')
@@ -72,6 +83,7 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
               const nextFrom = event.target.value
               setFromDate(nextFrom)
               setFilters((current) => ({ ...current, from: nextFrom }))
+              setFallbackDate(null)
               resetPage()
             }}
             slotProps={{ inputLabel: { shrink: true } }}
@@ -84,6 +96,7 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
               const nextTo = event.target.value
               setToDate(nextTo)
               setFilters((current) => ({ ...current, to: nextTo }))
+              setFallbackDate(null)
               resetPage()
             }}
             slotProps={{ inputLabel: { shrink: true } }}
@@ -92,6 +105,7 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
             variant="contained"
             onClick={() => {
               setFilters({ from: fromDate, to: toDate })
+              setFallbackDate(null)
               resetPage()
             }}
             disabled={loading || !fromDate || !toDate}
@@ -105,6 +119,7 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
               setFromDate(today)
               setToDate(today)
               setFilters({ from: today, to: today })
+              setFallbackDate(null)
               resetPage()
             }}
             disabled={loading}
@@ -112,6 +127,11 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
             Today
           </Button>
         </Stack>
+        {fallbackDate ? (
+          <Alert severity="info">
+            No results were found for the selected range. Showing the latest available results from {fallbackDate}.
+          </Alert>
+        ) : null}
         {error ? <Alert severity="error">{error}</Alert> : null}
         <LeaderboardTable
           items={items}
@@ -125,4 +145,16 @@ export function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
       </PageCard>
     </Stack>
   )
+}
+
+function inclusiveDateFromExclusiveTo(value: string): string {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10)
+  }
+
+  date.setUTCDate(date.getUTCDate() - 1)
+
+  return date.toISOString().slice(0, 10)
 }

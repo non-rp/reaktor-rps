@@ -1,6 +1,7 @@
 import { getMatches } from "../history/history.service"
 import {
 	findLeaderboard,
+	findLatestLeaderboardDay,
 	findUserById,
 	findUsers,
 	getUserStats,
@@ -89,6 +90,7 @@ export async function getLeaderboard(
 	filters: {
 		from: string
 		to: string
+		fallbackApplied: boolean
 	}
 	paging: {
 		limit: number
@@ -96,21 +98,42 @@ export async function getLeaderboard(
 		total: number
 	}
 }> {
-	const { items, total } = await findLeaderboard(params)
+	const initialResult = await findLeaderboard(params)
+	let result = initialResult
+	let effectiveRange = {
+		from: params.from,
+		to: params.to
+	}
+	let fallbackApplied = false
+
+	if (initialResult.total === 0) {
+		const latestDay = await findLatestLeaderboardDay()
+
+		if (latestDay) {
+			effectiveRange = buildOneDayRange(latestDay)
+			result = await findLeaderboard({
+				...params,
+				from: effectiveRange.from,
+				to: effectiveRange.to
+			})
+			fallbackApplied = result.total > 0
+		}
+	}
 
 	return {
-		items: items.map((item, index) => ({
+		items: result.items.map((item, index) => ({
 			...serializeUserStats(item),
 			rank: params.offset + index + 1
 		})),
 		filters: {
-			from: params.from?.toISOString() ?? new Date().toISOString(),
-			to: params.to?.toISOString() ?? new Date().toISOString()
+			from: effectiveRange.from?.toISOString() ?? new Date().toISOString(),
+			to: effectiveRange.to?.toISOString() ?? new Date().toISOString(),
+			fallbackApplied
 		},
 		paging: {
 			limit: params.limit,
 			offset: params.offset,
-			total
+			total: result.total
 		}
 	}
 }
@@ -124,6 +147,13 @@ function serializeUserStats(user: UserStatsRow): UserStatsRow & { winRate: numbe
 
 export function buildDefaultLeaderboardRange(): Required<Omit<UserStatsFilters, "query">> {
 	const from = new Date()
+	from.setUTCHours(0, 0, 0, 0)
+
+	return buildOneDayRange(from)
+}
+
+function buildOneDayRange(day: Date): Required<Omit<UserStatsFilters, "query">> {
+	const from = new Date(day)
 	from.setUTCHours(0, 0, 0, 0)
 
 	return {

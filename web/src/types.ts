@@ -75,6 +75,11 @@ export type LeaderboardItem = UserStats & {
 export type LeaderboardResponse = {
   items: LeaderboardItem[]
   paging: Paging
+  filters: {
+    from: string
+    to: string
+    fallbackApplied: boolean
+  }
 }
 
 export type UserProfileResponse = {

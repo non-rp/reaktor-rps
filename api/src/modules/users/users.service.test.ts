@@ -7,6 +7,7 @@ import {
 } from "./users.service";
 import {
 	findLeaderboard,
+	findLatestLeaderboardDay,
 	findUserById,
 	findUsers,
 	getUserStats
@@ -15,6 +16,7 @@ import { getMatches } from "../history/history.service";
 
 vi.mock("./users.repository", () => ({
 	findLeaderboard: vi.fn(),
+	findLatestLeaderboardDay: vi.fn(),
 	findUserById: vi.fn(),
 	findUsers: vi.fn(),
 	getUserStats: vi.fn()
@@ -27,6 +29,7 @@ vi.mock("../history/history.service", () => ({
 describe("users.service", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(findLatestLeaderboardDay).mockResolvedValue(null);
 	});
 
 	it("serializes list response and win rate", async () => {
@@ -94,6 +97,53 @@ describe("users.service", () => {
 			id: 2,
 			rank: 11,
 			winRate: 1
+		});
+	});
+
+	it("falls back to the latest leaderboard day when the requested range is empty", async () => {
+		vi.mocked(findLeaderboard)
+			.mockResolvedValueOnce({
+				items: [],
+				total: 0
+			})
+			.mockResolvedValueOnce({
+				items: [
+					{
+						id: 2,
+						name: "Bob",
+						matches: 3,
+						wins: 2,
+						losses: 1,
+						draws: 0,
+						invalidMatches: 0
+					}
+				],
+				total: 1
+			});
+		vi.mocked(findLatestLeaderboardDay).mockResolvedValue(new Date("2026-03-14T00:00:00.000Z"));
+
+		const result = await getLeaderboard({
+			limit: 10,
+			offset: 0,
+			from: new Date("2026-05-24T00:00:00.000Z"),
+			to: new Date("2026-05-25T00:00:00.000Z")
+		});
+
+		expect(findLeaderboard).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				from: new Date("2026-03-14T00:00:00.000Z"),
+				to: new Date("2026-03-15T00:00:00.000Z")
+			})
+		);
+		expect(result.filters).toEqual({
+			from: "2026-03-14T00:00:00.000Z",
+			to: "2026-03-15T00:00:00.000Z",
+			fallbackApplied: true
+		});
+		expect(result.items[0]).toMatchObject({
+			id: 2,
+			rank: 1,
+			winRate: 0.6667
 		});
 	});
 

@@ -303,9 +303,13 @@ export const swaggerSpec = swaggerJsdoc({
 							type: "object",
 							properties: {
 								from: { type: "string", format: "date-time" },
-								to: { type: "string", format: "date-time" }
+								to: { type: "string", format: "date-time" },
+								fallbackApplied: {
+									type: "boolean",
+									description: "True when an empty requested range was replaced with the latest day that has results."
+								}
 							},
-							required: ["from", "to"]
+							required: ["from", "to", "fallbackApplied"]
 						},
 						paging: {
 							type: "object",
