@@ -139,6 +139,21 @@ export async function findLeaderboard(params: Omit<FindUsersParams, "sortBy" | "
 	}
 }
 
+export async function findLatestLeaderboardDay(): Promise<Date | null> {
+	const result = await prisma.playerDayStat.aggregate({
+		_max: {
+			day: true
+		},
+		where: {
+			matches: {
+				gt: 0
+			}
+		}
+	})
+
+	return result._max.day
+}
+
 function buildPlayerWhere(query?: string): Prisma.Sql {
 	if (!query) {
 		return Prisma.empty
